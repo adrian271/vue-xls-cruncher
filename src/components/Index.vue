@@ -5,8 +5,7 @@
       <button>Submit</button>
     </form>
     <div>{{ directConversionRate }}</div>
-    <div></div>
-    <div></div>
+    <div>{{ directSalesRate }}</div>
     <div></div>
   </div>
 </template>
@@ -18,6 +17,7 @@ export default {
   name: "HelloWorld",
   data: () => ({
     directConversionRate: "",
+    directSalesRate: "",
   }),
   props: {
     msg: String,
@@ -30,48 +30,60 @@ export default {
         ["Converted Rental", "Touchpoints"].forEach((i) => {
           indices[i] = rows[0].indexOf(i);
         });
-        let headerRow = rows.shift(),
-          conversions = 0;
+        let headerRow = rows.shift();
         let rowsWithConversion = rows.filter(
           (row) => row[indices["Converted Rental"]].toLowerCase() === "yes"
         );
-        let rowsDirectSales = rows.filter(
+        let rowsWithDirectSales = rows.filter(
           (row) => row[indices["Converted Rental"]].toLowerCase() === "no"
         );
-        // rows.forEach((row) => {
-        //   if (row[indices["Converted Rental"]].toLowerCase() === "yes")
-        //     conversions++;
-        // });
         let conversionSources = [
           ...new Set(
-            rowsWithConversion.map((row, i) => {
-              let json = JSON.parse(row[indices["Touchpoints"]]);
-              for (let j = 0; j < json.length; j++)
-                console.log(
-                  i,
-                  j,
-                  json[j].referrer_source,
-                  json[j].referrer_medium
-                );
-            })
+            rowsWithConversion
+              .map((row, i) => {
+                let json = JSON.parse(row[indices["Touchpoints"]]);
+                for (let j = 0; j < json.length; j++) {
+                  let { referrer_medium, referrer_source } = json[j];
+                  console.log(i, j, referrer_source, referrer_medium);
+                  if (typeof referrer_source !== `undefined`)
+                    return referrer_source;
+                }
+              })
+              .filter((source) => source !== undefined)
           ),
         ].sort();
-        console.log(conversionSources);
+        console.log(`=====`);
+        let directSources = [
+          ...new Set(
+            rowsWithDirectSales
+              .map((row, i) => {
+                let json = JSON.parse(row[indices["Touchpoints"]]);
+                for (let j = 0; j < json.length; j++) {
+                  let { referrer_medium, referrer_source } = json[j];
+                  console.log(i, j, referrer_source, referrer_medium);
+                  if (typeof referrer_source !== `undefined`)
+                    return referrer_source;
+                }
+              })
+              .filter((source) => source !== undefined)
+          ),
+        ].sort();
+        console.log(`conversionSources`, conversionSources);
+        console.log(`directSources`, directSources);
         this.directConversionRate = `Conversion Percentage = ${(
           (rowsWithConversion.length / rows.length) *
           100
         ).toFixed(2)}%`;
-        // rows.forEach((row) => {
-        //   let json = JSON.parse(row[indices["Touchpoints"]]);
-        //   console.log(json);
-        // });
+        this.directSalesRate = `Direct Sales Percentage = ${(
+          (rowsWithDirectSales.length / rows.length) *
+          100
+        ).toFixed(2)}%`;
       });
     },
   },
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 h3 {
   margin: 40px 0 0;
