@@ -1,10 +1,18 @@
 <template>
   <div>
     <form @submit.prevent="submitHandler">
-      <input type="file" />
-      <button>Submit</button>
+      <input
+        type="file"
+        @change="fileUploadHandler"
+        accept=".xls,.xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+      />
+      <button :disabled="!fileCount">Submit</button>
     </form>
     <div>{{ directConversionRate }}</div>
+    <div v-for="(value, key) in conversionData">
+      {{ key }}: {{ value[key] }}
+      <div v-for="(subVal, k) in value[key]">{{ k }}: {{ subVal }}</div>
+    </div>
     <div>{{ directSalesRate }}</div>
     <div></div>
   </div>
@@ -14,10 +22,13 @@
 import readXlsxFile from "read-excel-file";
 
 export default {
-  name: "HelloWorld",
+  name: "Index",
   data: () => ({
     directConversionRate: "",
+    rowsWithConversion: [],
+    conversionData: {},
     directSalesRate: "",
+    fileCount: 0,
   }),
   props: {
     msg: String,
@@ -31,7 +42,7 @@ export default {
           indices[i] = rows[0].indexOf(i);
         });
         let headerRow = rows.shift();
-        let rowsWithConversion = rows.filter(
+        this.rowsWithConversion = rows.filter(
           (row) => row[indices["Converted Rental"]].toLowerCase() === "yes"
         );
         let rowsWithDirectSales = rows.filter(
@@ -39,7 +50,7 @@ export default {
         );
         let conversionSources = [
           ...new Set(
-            rowsWithConversion
+            this.rowsWithConversion
               .map((row, i) => {
                 let json = JSON.parse(row[indices["Touchpoints"]]);
                 for (let j = 0; j < json.length; j++) {
@@ -70,8 +81,32 @@ export default {
         ].sort();
         console.log(`conversionSources`, conversionSources);
         console.log(`directSources`, directSources);
+
+        let conversionData = {};
+
+        let conversionBreakdown = conversionSources.forEach((source) => {
+          console.log(`source: `, source);
+          conversionData[source] = [];
+
+          this.rowsWithConversion.forEach((row) => {
+            let json = JSON.parse(row[indices["Touchpoints"]]);
+            json.forEach((jsonObj) => {
+              let { referrer_source, referrer_medium } = jsonObj;
+              if (referrer_source === source) {
+                typeof conversionData[source][referrer_medium] === `undefined`
+                  ? (conversionData[source][referrer_medium] = 1)
+                  : conversionData[source][referrer_medium]++;
+              }
+            });
+          });
+        });
+
+        this.conversionData = conversionData;
+
+        console.log(conversionData);
+
         this.directConversionRate = `Conversion Percentage = ${(
-          (rowsWithConversion.length / rows.length) *
+          (this.rowsWithConversion.length / rows.length) *
           100
         ).toFixed(2)}%`;
         this.directSalesRate = `Direct Sales Percentage = ${(
@@ -79,6 +114,9 @@ export default {
           100
         ).toFixed(2)}%`;
       });
+    },
+    fileUploadHandler: function (ev) {
+      this.fileCount = ev.target.files.length;
     },
   },
 };
