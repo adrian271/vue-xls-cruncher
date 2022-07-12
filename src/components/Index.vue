@@ -8,13 +8,32 @@
       />
       <button :disabled="!fileCount">Submit</button>
     </form>
-    <div>{{ directConversionRate }}</div>
-    <div v-for="(value, key) in conversionData">
-      {{ key }}: {{ value[key] }}
-      <div v-for="(subVal, k) in value[key]">{{ k }}: {{ subVal }}</div>
-    </div>
-    <div>{{ directSalesRate }}</div>
-    <div></div>
+    <table v-if="directConversionRate">
+      <tr>
+        <td colspan="2">
+          <div>{{ directConversionRate }}</div>
+        </td>
+      </tr>
+
+      <tr>
+        <div v-for="(value, key) in conversionData">
+          <td>{{ key }}: {{ value[key] }}</td>
+          <td>
+            <div v-for="(subVal, k) in value[key]">{{ k }}: {{ subVal }}</div>
+          </td>
+        </div>
+      </tr>
+    </table>
+    <table v-if="directSalesRate">
+      <tr>
+        <td colspan="2">
+          <div>{{ directSalesRate }}</div>
+        </td>
+      </tr>
+      <tr>
+        <td><div></div></td>
+      </tr>
+    </table>
   </div>
 </template>
 
@@ -136,5 +155,20 @@ li {
 }
 a {
   color: #42b983;
+}
+table {
+  max-width: 800px;
+  width: 100%;
+  margin: 3rem auto;
+  border-collapse: collapse;
+}
+
+tr,
+td {
+  padding: 0;
+}
+td {
+  border: 1px solid #000;
+  padding: ;
 }
 </style>
